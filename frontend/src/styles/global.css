@@ -37,6 +37,12 @@ button:hover {
   background: #17544f;
 }
 
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 button.ghost {
   background: #eef3f2;
   color: #1f6f68;
@@ -120,7 +126,7 @@ button.danger {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -302,6 +308,9 @@ th {
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .message.success {

@@ -23,6 +23,7 @@ def generate_pickup_code():
 @transaction.atomic
 def inbound_parcel(validated_data):
     size = validated_data.pop("size", None)
+    cell_type = validated_data.pop("cell_type", None)
     cells = (
         LockerCell.objects.select_for_update()
         .filter(status=LockerCell.Status.EMPTY)
@@ -30,6 +31,8 @@ def inbound_parcel(validated_data):
     )
     if size:
         cells = cells.filter(size=size)
+    if cell_type:
+        cells = cells.filter(cell_type=cell_type)
     available_cells = [cell for cell in cells if not cell.is_temperature_alert]
     if not available_cells:
         raise ValidationError({"locker_cell": "没有可用柜格（冷藏柜温度异常或无空闲柜格）。"})

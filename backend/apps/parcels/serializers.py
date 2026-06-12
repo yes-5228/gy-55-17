@@ -38,6 +38,7 @@ class ParcelInboundSerializer(serializers.Serializer):
     receiver_phone = serializers.CharField(max_length=30)
     carrier = serializers.CharField(max_length=40)
     size = serializers.ChoiceField(choices=LockerCell.Size.choices, required=False)
+    cell_type = serializers.ChoiceField(choices=LockerCell.CellType.choices, required=False)
     note = serializers.CharField(max_length=200, required=False, allow_blank=True)
 
 

@@ -1,4 +1,4 @@
-import { Bell, Boxes, PackageCheck, RotateCcw } from "lucide-react";
+import { AlertTriangle, Bell, Boxes, PackageCheck, RotateCcw } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { lockersApi, notificationsApi, parcelsApi, returnsApi } from "../api/modules";
@@ -26,6 +26,7 @@ export default function DashboardPage() {
 
   const storedCount = parcels.filter((parcel) => parcel.status === "stored").length;
   const pendingReturns = returns.filter((item) => item.status === "pending").length;
+  const alertCount = summary?.temperature_alert ?? 0;
 
   return (
     <>
@@ -35,6 +36,13 @@ export default function DashboardPage() {
         <MetricCard title="在柜快件" value={storedCount} hint="等待用户取件" icon={PackageCheck} />
         <MetricCard title="待处理退件" value={pendingReturns} hint="需操作员确认" icon={RotateCcw} />
         <MetricCard title="通知记录" value={notifications.length} hint="入库通知已发送" icon={Bell} />
+        <MetricCard
+          title="温度告警"
+          value={alertCount}
+          hint={alertCount > 0 ? "需及时处理" : "运行正常"}
+          icon={<AlertTriangle size={20} />}
+          alert={alertCount > 0}
+        />
       </div>
       <section className="panel">
         <h2>最近入库</h2>
@@ -45,6 +53,12 @@ export default function DashboardPage() {
             { key: "receiver_name", title: "收件人" },
             { key: "carrier", title: "承运商" },
             { key: "cell", title: "柜格", render: (row) => row.locker_cell_detail?.code },
+            { key: "type", title: "类型", render: (row) => (
+              <StatusBadge
+                status={row.locker_cell_detail?.cell_type}
+                label={row.locker_cell_detail?.cell_type_label}
+              />
+            )},
             { key: "status", title: "状态", render: (row) => <StatusBadge status={row.status} label={row.status_label} /> },
           ]}
         />
