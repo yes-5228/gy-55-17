@@ -37,49 +37,49 @@ export default function InboundPage() {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
 
-  const emptyNormal = useMemo(() => {
-    return cells.filter((c) => c.cell_type === "normal" && c.status === "empty");
-  }, [cells]);
+  const sizeLabelMap = { small: "小号", medium: "中号", large: "大号" };
+  const typeLabelMap = { normal: "普通", refrigerated: "冷藏" };
 
-  const emptyRefrigerated = useMemo(() => {
-    return cells.filter((c) => c.cell_type === "refrigerated" && c.status === "empty");
-  }, [cells]);
+  const filteredBySelection = useMemo(() => {
+    return cells.filter(
+      (c) => c.cell_type === form.cell_type && c.size === form.size && c.status === "empty"
+    );
+  }, [cells, form.cell_type, form.size]);
 
-  const availableRefrigerated = useMemo(() => {
-    return emptyRefrigerated.filter((c) => !c.is_temperature_alert);
-  }, [emptyRefrigerated]);
+  const availableBySelection = useMemo(() => {
+    return filteredBySelection.filter((c) => !c.is_temperature_alert);
+  }, [filteredBySelection]);
 
-  const alertRefrigerated = useMemo(() => {
-    return cells.filter((c) => c.cell_type === "refrigerated" && c.is_temperature_alert);
-  }, [cells]);
+  const alertBySelection = useMemo(() => {
+    return cells.filter(
+      (c) => c.cell_type === form.cell_type && c.is_temperature_alert
+    );
+  }, [cells, form.cell_type]);
 
   const isDisabled = useMemo(() => {
-    if (form.cell_type === "normal") {
-      return emptyNormal.length === 0;
-    }
-    if (form.cell_type === "refrigerated") {
-      return availableRefrigerated.length === 0;
-    }
-    return false;
-  }, [form.cell_type, emptyNormal, availableRefrigerated]);
+    return availableBySelection.length === 0;
+  }, [availableBySelection]);
 
   const tipMessage = useMemo(() => {
-    if (form.cell_type === "normal" && emptyNormal.length === 0) {
-      return { type: "error", text: "没有空闲普通柜格。" };
+    const sizeLabel = sizeLabelMap[form.size];
+    const typeLabel = typeLabelMap[form.cell_type];
+    if (filteredBySelection.length === 0) {
+      return { type: "error", text: `没有空闲的${sizeLabel}${typeLabel}柜格。` };
     }
-    if (form.cell_type === "refrigerated") {
-      if (emptyRefrigerated.length === 0) {
-        return { type: "error", text: "没有空闲冷藏柜格。" };
-      }
-      if (availableRefrigerated.length === 0) {
-        return { type: "error", text: "冷藏柜温度异常，暂无可用于入库的冷藏柜格。" };
-      }
-      if (alertRefrigerated.length > 0) {
-        return { type: "info", text: `当前有 ${alertRefrigerated.length} 个冷藏柜温度异常。` };
-      }
+    if (form.cell_type === "refrigerated" && availableBySelection.length === 0) {
+      return {
+        type: "error",
+        text: `${sizeLabel}冷藏柜温度异常，暂无可用于入库的${sizeLabel}冷藏柜格。`,
+      };
+    }
+    if (form.cell_type === "refrigerated" && alertBySelection.length > 0) {
+      return {
+        type: "info",
+        text: `当前有 ${alertBySelection.length} 个${typeLabel}柜温度异常。`,
+      };
     }
     return null;
-  }, [form.cell_type, emptyNormal, emptyRefrigerated, availableRefrigerated, alertRefrigerated]);
+  }, [form.cell_type, form.size, filteredBySelection, availableBySelection, alertBySelection]);
 
   const submit = async (event) => {
     event.preventDefault();

@@ -20,6 +20,29 @@ def generate_pickup_code():
             return code
 
 
+def _describe_cell_type(cell_type):
+    if cell_type == LockerCell.CellType.REFRIGERATED:
+        return "冷藏"
+    if cell_type == LockerCell.CellType.NORMAL:
+        return "普通"
+    return ""
+
+
+def _describe_size(size):
+    if size == LockerCell.Size.SMALL:
+        return "小"
+    if size == LockerCell.Size.MEDIUM:
+        return "中"
+    if size == LockerCell.Size.LARGE:
+        return "大"
+    return ""
+
+
+def _describe_prefix(cell_type, size):
+    parts = [_describe_size(size), _describe_cell_type(cell_type)]
+    return "".join(p for p in parts if p)
+
+
 @transaction.atomic
 def inbound_parcel(validated_data):
     size = validated_data.pop("size", None)
@@ -34,19 +57,32 @@ def inbound_parcel(validated_data):
     if cell_type:
         cells = cells.filter(cell_type=cell_type)
     cells_list = list(cells)
+    prefix = _describe_prefix(cell_type, size)
     if not cells_list:
-        if cell_type == LockerCell.CellType.REFRIGERATED:
-            raise ValidationError({"locker_cell": "没有空闲冷藏柜格。"})
-        elif cell_type == LockerCell.CellType.NORMAL:
-            raise ValidationError({"locker_cell": "没有空闲普通柜格。"})
+        if prefix:
+            raise ValidationError({"locker_cell": f"没有空闲的{prefix}柜格。"})
         else:
             raise ValidationError({"locker_cell": "没有空闲柜格。"})
     available_cells = [cell for cell in cells_list if not cell.is_temperature_alert]
     if not available_cells:
         if cell_type == LockerCell.CellType.REFRIGERATED:
-            raise ValidationError({"locker_cell": "冷藏柜温度异常，暂无可用于入库的冷藏柜格。"})
+            size_label = _describe_size(size)
+            if size_label:
+                raise ValidationError(
+                    {"locker_cell": f"{size_label}号冷藏柜温度异常，暂无可用于入库的{size_label}号冷藏柜格。"}
+                )
+            else:
+                raise ValidationError(
+                    {"locker_cell": "冷藏柜温度异常，暂无可用于入库的冷藏柜格。"}
+                )
+        elif prefix:
+            raise ValidationError(
+                {"locker_cell": f"冷藏柜温度异常，暂无可用于入库的{prefix}柜格。"}
+            )
         else:
-            raise ValidationError({"locker_cell": "冷藏柜温度异常，暂无可用于入库的柜格。"})
+            raise ValidationError(
+                {"locker_cell": "冷藏柜温度异常，暂无可用于入库的柜格。"}
+            )
     cell = available_cells[0]
 
     if Parcel.objects.filter(tracking_no=validated_data["tracking_no"]).exists():
