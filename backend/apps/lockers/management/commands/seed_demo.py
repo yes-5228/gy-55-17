@@ -11,13 +11,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for index in range(1, 13):
             size = LockerCell.Size.SMALL if index <= 4 else LockerCell.Size.MEDIUM if index <= 9 else LockerCell.Size.LARGE
-            LockerCell.objects.get_or_create(
+            LockerCell.objects.update_or_create(
                 code=f"A{index:02d}",
                 defaults={
                     "zone": "A区",
                     "size": size,
                     "cell_type": LockerCell.CellType.NORMAL,
                     "temperature": 23 + index / 10,
+                    "min_temperature": 2.0,
+                    "max_temperature": 8.0,
                 },
             )
 
@@ -29,7 +31,7 @@ class Command(BaseCommand):
                 temperature = 1.0
             else:
                 temperature = 5.0
-            LockerCell.objects.get_or_create(
+            LockerCell.objects.update_or_create(
                 code=f"B{index:02d}",
                 defaults={
                     "zone": "B区",

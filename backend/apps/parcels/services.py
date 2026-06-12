@@ -75,9 +75,28 @@ def inbound_parcel(validated_data):
                 raise ValidationError(
                     {"locker_cell": "冷藏柜温度异常，暂无可用于入库的冷藏柜格。"}
                 )
-        elif prefix:
+        if cell_type == LockerCell.CellType.NORMAL:
             raise ValidationError(
-                {"locker_cell": f"冷藏柜温度异常，暂无可用于入库的{prefix}柜格。"}
+                {"locker_cell": f"没有空闲的{prefix}柜格。"}
+            )
+        has_empty_normal = any(
+            c.cell_type == LockerCell.CellType.NORMAL for c in cells_list
+        )
+        has_empty_refrigerated = any(
+            c.cell_type == LockerCell.CellType.REFRIGERATED for c in cells_list
+        )
+        reasons = []
+        if not has_empty_normal:
+            size_label = _describe_size(size)
+            normal_desc = f"{size_label}号普通" if size_label else "普通"
+            reasons.append(f"{normal_desc}柜格已满")
+        if has_empty_refrigerated:
+            size_label = _describe_size(size)
+            ref_desc = f"{size_label}号冷藏" if size_label else "冷藏"
+            reasons.append(f"{ref_desc}柜温度异常")
+        if reasons:
+            raise ValidationError(
+                {"locker_cell": f"{'，'.join(reasons)}，暂无可用柜格。"}
             )
         else:
             raise ValidationError(
