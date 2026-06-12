@@ -126,7 +126,7 @@ button.danger {
 }
 
 .metric-grid.compact {
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
 }
 
 .metric-card,
@@ -165,6 +165,16 @@ button.danger {
   place-items: center;
   background: #e8f3f1;
   color: #1f6f68;
+}
+
+.metric-card.alert {
+  border-color: #f3c5bf;
+  background: #fff0ed;
+}
+
+.metric-card.alert .metric-icon {
+  background: #ffe3dd;
+  color: #b42318;
 }
 
 .panel {
@@ -374,6 +384,6 @@ th {
   }
 
   .metric-grid.compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

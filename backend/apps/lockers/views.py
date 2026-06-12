@@ -19,6 +19,9 @@ class LockerCellViewSet(viewsets.ModelViewSet):
             item["status"]: item["count"]
             for item in LockerCell.objects.values("status").annotate(count=Count("id"))
         }
+        alert_count = sum(
+            1 for cell in LockerCell.objects.all() if cell.is_temperature_alert
+        )
         return Response(
             {
                 "total": total,
@@ -26,6 +29,7 @@ class LockerCellViewSet(viewsets.ModelViewSet):
                 "occupied": by_status.get(LockerCell.Status.OCCUPIED, 0),
                 "open": by_status.get(LockerCell.Status.OPEN, 0),
                 "maintenance": by_status.get(LockerCell.Status.MAINTENANCE, 0),
+                "temperature_alert": alert_count,
             }
         )
 

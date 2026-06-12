@@ -1,4 +1,4 @@
-import { RefreshCw, RotateCcw, Wrench } from "lucide-react";
+import { AlertTriangle, RefreshCw, RotateCcw, Wrench } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 import { lockersApi } from "../api/modules";
@@ -50,6 +50,12 @@ export default function LockerMonitorPage() {
         <MetricCard title="已占用" value={summary?.occupied ?? 0} />
         <MetricCard title="已开门" value={summary?.open ?? 0} />
         <MetricCard title="维护中" value={summary?.maintenance ?? 0} />
+        <MetricCard
+          title="温度告警"
+          value={summary?.temperature_alert ?? 0}
+          icon={<AlertTriangle size={22} />}
+          alert={summary?.temperature_alert > 0}
+        />
       </div>
       <MessageBox type="error">{error}</MessageBox>
       <section className="panel">
@@ -59,7 +65,27 @@ export default function LockerMonitorPage() {
             { key: "code", title: "柜格" },
             { key: "zone", title: "区域" },
             { key: "size", title: "尺寸", render: (row) => row.size_label },
-            { key: "temperature", title: "温度", render: (row) => `${row.temperature}°C` },
+            { key: "cell_type", title: "类型", render: (row) => (
+              <StatusBadge status={row.cell_type} label={row.cell_type_label} />
+            )},
+            {
+              key: "temperature",
+              title: "温度",
+              render: (row) => row.is_temperature_alert ? (
+                <span className="badge red">{row.temperature}°C 告警</span>
+              ) : (
+                <span>{row.temperature}°C</span>
+              ),
+            },
+            {
+              key: "is_temperature_alert",
+              title: "告警状态",
+              render: (row) => row.is_temperature_alert ? (
+                <StatusBadge status="temp_alert" label="温度异常" />
+              ) : (
+                <StatusBadge status="empty" label="正常" />
+              ),
+            },
             { key: "status", title: "状态", render: (row) => <StatusBadge status={row.status} label={row.status_label} /> },
             {
               key: "actions",

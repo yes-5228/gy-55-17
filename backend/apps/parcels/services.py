@@ -23,12 +23,17 @@ def generate_pickup_code():
 @transaction.atomic
 def inbound_parcel(validated_data):
     size = validated_data.pop("size", None)
-    cells = LockerCell.objects.select_for_update().filter(status=LockerCell.Status.EMPTY)
+    cells = (
+        LockerCell.objects.select_for_update()
+        .filter(status=LockerCell.Status.EMPTY)
+        .order_by("zone", "code")
+    )
     if size:
         cells = cells.filter(size=size)
-    cell = cells.order_by("zone", "code").first()
-    if not cell:
-        raise ValidationError({"locker_cell": "没有可用柜格，请先释放或维护柜格。"})
+    available_cells = [cell for cell in cells if not cell.is_temperature_alert]
+    if not available_cells:
+        raise ValidationError({"locker_cell": "没有可用柜格（冷藏柜温度异常或无空闲柜格）。"})
+    cell = available_cells[0]
 
     if Parcel.objects.filter(tracking_no=validated_data["tracking_no"]).exists():
         raise ValidationError({"tracking_no": "该运单号已经入库。"})

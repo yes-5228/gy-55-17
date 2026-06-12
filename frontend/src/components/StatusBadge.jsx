@@ -13,6 +13,9 @@ const statusMap = {
   completed: "green",
   sent: "green",
   failed: "red",
+  temp_alert: "red",
+  refrigerated: "blue",
+  normal: "gray",
 };
 
 export default function StatusBadge({ status, label }) {
