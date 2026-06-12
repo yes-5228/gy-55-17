@@ -33,9 +33,20 @@ def inbound_parcel(validated_data):
         cells = cells.filter(size=size)
     if cell_type:
         cells = cells.filter(cell_type=cell_type)
-    available_cells = [cell for cell in cells if not cell.is_temperature_alert]
+    cells_list = list(cells)
+    if not cells_list:
+        if cell_type == LockerCell.CellType.REFRIGERATED:
+            raise ValidationError({"locker_cell": "没有空闲冷藏柜格。"})
+        elif cell_type == LockerCell.CellType.NORMAL:
+            raise ValidationError({"locker_cell": "没有空闲普通柜格。"})
+        else:
+            raise ValidationError({"locker_cell": "没有空闲柜格。"})
+    available_cells = [cell for cell in cells_list if not cell.is_temperature_alert]
     if not available_cells:
-        raise ValidationError({"locker_cell": "没有可用柜格（冷藏柜温度异常或无空闲柜格）。"})
+        if cell_type == LockerCell.CellType.REFRIGERATED:
+            raise ValidationError({"locker_cell": "冷藏柜温度异常，暂无可用于入库的冷藏柜格。"})
+        else:
+            raise ValidationError({"locker_cell": "冷藏柜温度异常，暂无可用于入库的柜格。"})
     cell = available_cells[0]
 
     if Parcel.objects.filter(tracking_no=validated_data["tracking_no"]).exists():

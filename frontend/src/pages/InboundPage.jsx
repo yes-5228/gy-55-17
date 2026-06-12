@@ -37,18 +37,49 @@ export default function InboundPage() {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
 
-  const availableRefrigerated = useMemo(() => {
-    return cells.filter(
-      (c) => c.cell_type === "refrigerated" && c.status === "empty" && !c.is_temperature_alert
-    );
+  const emptyNormal = useMemo(() => {
+    return cells.filter((c) => c.cell_type === "normal" && c.status === "empty");
   }, [cells]);
+
+  const emptyRefrigerated = useMemo(() => {
+    return cells.filter((c) => c.cell_type === "refrigerated" && c.status === "empty");
+  }, [cells]);
+
+  const availableRefrigerated = useMemo(() => {
+    return emptyRefrigerated.filter((c) => !c.is_temperature_alert);
+  }, [emptyRefrigerated]);
 
   const alertRefrigerated = useMemo(() => {
     return cells.filter((c) => c.cell_type === "refrigerated" && c.is_temperature_alert);
   }, [cells]);
 
-  const isRefrigeratedDisabled =
-    form.cell_type === "refrigerated" && availableRefrigerated.length === 0;
+  const isDisabled = useMemo(() => {
+    if (form.cell_type === "normal") {
+      return emptyNormal.length === 0;
+    }
+    if (form.cell_type === "refrigerated") {
+      return availableRefrigerated.length === 0;
+    }
+    return false;
+  }, [form.cell_type, emptyNormal, availableRefrigerated]);
+
+  const tipMessage = useMemo(() => {
+    if (form.cell_type === "normal" && emptyNormal.length === 0) {
+      return { type: "error", text: "没有空闲普通柜格。" };
+    }
+    if (form.cell_type === "refrigerated") {
+      if (emptyRefrigerated.length === 0) {
+        return { type: "error", text: "没有空闲冷藏柜格。" };
+      }
+      if (availableRefrigerated.length === 0) {
+        return { type: "error", text: "冷藏柜温度异常，暂无可用于入库的冷藏柜格。" };
+      }
+      if (alertRefrigerated.length > 0) {
+        return { type: "info", text: `当前有 ${alertRefrigerated.length} 个冷藏柜温度异常。` };
+      }
+    }
+    return null;
+  }, [form.cell_type, emptyNormal, emptyRefrigerated, availableRefrigerated, alertRefrigerated]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -91,20 +122,16 @@ export default function InboundPage() {
               <option value="refrigerated">冷藏</option>
             </select>
           </label>
-          {form.cell_type === "refrigerated" && alertRefrigerated.length > 0 && (
-            <div className="message info">
-              <AlertTriangle size={16} /> 当前有 {alertRefrigerated.length} 个冷藏柜温度异常
-            </div>
-          )}
-          {isRefrigeratedDisabled && (
-            <div className="message error">
-              <AlertTriangle size={16} /> 冷藏柜温度异常，暂无可用于入库的冷藏柜格
+          {tipMessage && (
+            <div className={`message ${tipMessage.type}`}>
+              <AlertTriangle size={16} />
+              {tipMessage.text}
             </div>
           )}
           <label>备注<input name="note" value={form.note} onChange={updateField} /></label>
-          <button type="submit" disabled={isRefrigeratedDisabled}>
+          <button type="submit" disabled={isDisabled}>
             <PackagePlus size={18} />
-            {isRefrigeratedDisabled ? "冷藏柜不可用" : "确认入库"}
+            {isDisabled ? "暂无可用柜格" : "确认入库"}
           </button>
           <MessageBox type="success">{message}</MessageBox>
           <MessageBox type="error">{error}</MessageBox>
